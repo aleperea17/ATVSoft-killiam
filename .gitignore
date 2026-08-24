@@ -1,0 +1,32 @@
+# macOS
+.DS_Store
+
+# Frontend (dev/build cache — se regeneran con npm run dev / build)
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/*.tsbuildinfo
+
+# Backend
+backend/.env
+backend/.env.*
+!backend/.env.template
+backend/__pycache__/
+**/__pycache__/
+*.pyc
+.venv/
+venv/
+# Media generada en runtime (sync Instagram, logos subidos)
+backend/media/stories/**/*
+!backend/media/stories/.gitkeep
+backend/media/logo/*
+!backend/media/logo/.gitkeep
+
+# Harnesses locales de prueba (no son la plantilla)
+.tmp-pw/
+
+# IDE / logs
+.env
+.env.local
+frontend/.env.local
+*.log

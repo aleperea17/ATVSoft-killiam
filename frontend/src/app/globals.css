@@ -1,0 +1,367 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Brand / acento (rojo ATV) */
+  --red: #E63946;
+  --red-light: #FF4D5A;
+  --red-dark: #B71C1C;
+  --red-glow: rgba(230, 57, 70, 0.12);
+  --red-faint: rgba(230, 57, 70, 0.06);
+  --accent: #E63946;
+  --accent-glow: rgba(230, 57, 70, 0.14);
+  --accent-faint: rgba(230, 57, 70, 0.06);
+  --border-red: rgba(230, 57, 70, 0.2);
+  --surface-accent-rgb: 230, 57, 70;
+
+  /* Surfaces — deep black layered depth */
+  --bg: #050505;
+  --bg2: #0C0C0E;
+  --bg3: #141416;
+  --bg4: #1E1E22;
+
+  /* Borders */
+  --border: rgba(255, 255, 255, 0.05);
+  --border2: rgba(255, 255, 255, 0.08);
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--border);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--border);
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--border);
+
+  /* Text hierarchy */
+  --text: #FAFAFA;
+  --text2: #A1A1AA;
+  --text3: #52525B;
+
+  /* Layout helpers */
+  --topbar-bg: rgba(9, 9, 11, 0.8);
+  --nav-hover: rgba(255, 255, 255, 0.03);
+
+  /* Semantic */
+  --green: #22C55E;
+  --amber: #F59E0B;
+
+  /* Embudo (capas de arriba hacia abajo) */
+  --funnel-layer-0: rgba(230, 57, 70, 0.35);
+  --funnel-layer-1: rgba(230, 57, 70, 0.28);
+  --funnel-layer-2: rgba(230, 57, 70, 0.21);
+  --funnel-layer-3: rgba(230, 57, 70, 0.14);
+  --funnel-layer-4: rgba(230, 57, 70, 0.07);
+
+  /* Auth / setup (login) */
+  --auth-detail: #FF4D5A;
+  --auth-detail-soft: rgba(255, 255, 255, 0.92);
+  --auth-cta-bg: var(--accent);
+  --auth-cta-text: #FFFFFF;
+  --auth-focus-ring: rgba(230, 57, 70, 0.35);
+  --auth-red: var(--red);
+  --auth-red-bright: var(--red-light);
+  --auth-red-dark: var(--red-dark);
+  --auth-red-border: var(--border-red);
+  --auth-red-glow: var(--accent-glow);
+}
+
+[data-theme='light'] {
+  --accent-faint: rgba(230, 57, 70, 0.1);
+  --auth-detail: var(--red-dark);
+  --auth-detail-soft: rgba(24, 24, 27, 0.92);
+  --auth-cta-bg: var(--accent);
+  --auth-cta-text: #FFFFFF;
+  --auth-focus-ring: rgba(230, 57, 70, 0.28);
+  --bg: #f4f4f5;
+  --bg2: #ffffff;
+  --bg3: #fafafa;
+  --bg4: #e4e4e7;
+  --border: rgba(0, 0, 0, 0.08);
+  --border2: rgba(0, 0, 0, 0.12);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06), 0 0 0 1px var(--border);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08), 0 0 0 1px var(--border);
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.1), 0 0 0 1px var(--border);
+  --text: #18181b;
+  --text2: #52525b;
+  --text3: #71717a;
+  --topbar-bg: rgba(255, 255, 255, 0.88);
+  --nav-hover: rgba(0, 0, 0, 0.05);
+}
+
+@layer base {
+  body {
+    @apply bg-[var(--bg)] text-[var(--text)] antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    letter-spacing: -0.01em;
+  }
+
+  ::selection {
+    background: rgba(230, 57, 70, 0.3);
+    color: var(--text);
+  }
+
+  [data-theme='light'] ::selection {
+    background: rgba(230, 57, 70, 0.22);
+    color: var(--text);
+  }
+
+  ::-webkit-scrollbar {
+    width: 5px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  [data-theme='light'] ::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.12);
+  }
+  [data-theme='light'] ::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.18);
+  }
+}
+
+@layer components {
+  /* Tarjeta opaca: sin backdrop-filter ni capas pseudo (mejor FPS). */
+  .glass-card {
+    position: relative;
+    border-radius: 16px;
+    border: 1px solid var(--border2);
+    background: var(--bg2);
+    box-shadow: var(--shadow-sm);
+    contain: layout style paint;
+    transition: border-color 0.15s ease;
+  }
+  .glass-card:hover {
+    border-color: rgba(var(--surface-accent-rgb), 0.28);
+  }
+  .glass-card.glass-card--performant {
+    contain: layout style paint;
+  }
+
+  .panel-card {
+    position: relative;
+    border-radius: 16px;
+    border: 1px solid var(--border2);
+    background: var(--bg2);
+    box-shadow: var(--shadow-sm);
+    contain: layout style paint;
+  }
+  .panel-card:hover {
+    border-color: rgba(var(--surface-accent-rgb), 0.35);
+  }
+
+  /* Modal: superficie opaca */
+  .modal-panel {
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: 16px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
+    position: relative;
+    overflow-x: hidden;
+  }
+  [data-theme='light'] .modal-panel {
+    background: var(--bg2);
+    border-color: var(--border2);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.12);
+  }
+
+  [data-theme='light'] .glass-card:hover {
+    border-color: rgba(var(--surface-accent-rgb), 0.22);
+  }
+
+  .glass-surface {
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 12px;
+  }
+
+  /* Botones primarios: contraste correcto en oscuro (accent blanco) y claro (accent negro). */
+  .btn-primary {
+    background-color: var(--accent);
+    color: #ffffff;
+  }
+  .btn-primary:hover:not(:disabled) {
+    opacity: 0.9;
+  }
+  .btn-primary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  .segment-group {
+    display: inline-flex;
+    gap: 0.25rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border2);
+    background: var(--bg3);
+    padding: 0.25rem;
+  }
+  .segment-tab {
+    border-radius: 0.375rem;
+    padding: 0.5rem 1rem;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    color: var(--text2);
+    transition: color 0.15s ease, background-color 0.15s ease;
+  }
+  .segment-tab:hover {
+    color: var(--text);
+    background: var(--nav-hover);
+  }
+  .segment-tab-active {
+    background-color: var(--accent);
+    color: #ffffff;
+    box-shadow: 0 0 12px rgba(230, 57, 70, 0.3);
+  }
+  .segment-tab-active:hover {
+    background-color: var(--red-light);
+    color: #ffffff;
+    opacity: 1;
+  }
+
+  /* Accent line on top of cards */
+  .accent-top::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), transparent 70%);
+    border-radius: 12px 12px 0 0;
+  }
+
+  /* Login card — acento rojo liviano, sin blur ni capas pesadas */
+  .auth-card {
+    position: relative;
+    border-radius: 16px;
+    border: 1px solid var(--border-red);
+    background: var(--bg2);
+    box-shadow:
+      0 0 0 1px var(--red-faint),
+      0 12px 40px var(--red-glow);
+    contain: layout style paint;
+  }
+
+  .auth-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    border-radius: 16px 16px 0 0;
+    background: linear-gradient(90deg, var(--auth-red-border) 0%, transparent 55%);
+    pointer-events: none;
+  }
+
+  .auth-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 1px;
+    border-radius: 16px 0 0 16px;
+    background: linear-gradient(180deg, var(--auth-red-border) 0%, transparent 55%);
+    pointer-events: none;
+  }
+
+  .auth-shell {
+    --auth-detail: var(--red-light);
+    --auth-cta-bg: var(--accent);
+    --auth-cta-text: #ffffff;
+    --auth-focus-ring: rgba(230, 57, 70, 0.35);
+  }
+
+  .auth-cta {
+    background: var(--accent);
+    color: var(--auth-cta-text);
+  }
+
+  .auth-cta:hover:not(:disabled) {
+    background: var(--red-light);
+  }
+
+  .auth-cta:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  .auth-input:focus {
+    border-color: var(--border-red);
+    outline: 1px solid var(--auth-focus-ring);
+    outline-offset: 0;
+  }
+
+  /* Font mono for numbers */
+  .font-mono-num {
+    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+    letter-spacing: -0.04em;
+  }
+
+  /*
+   * Leads grid: `border-collapse: collapse` rompe fondos en celdas sticky (se ve el scroll detrás).
+   * Checkbox + # + Nombre van juntos sticky; si solo Nombre fuera sticky con left: 88px, al hacer scroll
+   * quedaría un hueco a la izquierda donde se ve el contenido pasando.
+   */
+  .leads-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    /* Evita que una celda con texto sin espacios ensanche toda la columna; los anchos vienen de <th>/<td>. */
+    table-layout: fixed;
+  }
+  .leads-table__sticky-frozen {
+    position: sticky;
+    background-color: var(--bg2);
+    background-clip: padding-box;
+  }
+  .leads-table__sticky-check {
+    left: 0;
+    z-index: 23;
+    border-right: 1px solid var(--border2);
+  }
+  .leads-table__sticky-num {
+    left: var(--leads-check-w, 48px);
+    z-index: 24;
+    border-right: 1px solid var(--border2);
+  }
+  .leads-table__sticky-name {
+    left: calc(var(--leads-check-w, 48px) + var(--leads-num-w, 40px));
+    z-index: 25;
+    border-right: 1px solid var(--border2);
+    box-shadow: 4px 0 12px -4px rgba(0, 0, 0, 0.42);
+  }
+  .leads-table thead .leads-table__sticky-frozen {
+    background-color: var(--bg3);
+  }
+  .leads-table thead .leads-table__sticky-check {
+    z-index: 33;
+  }
+  .leads-table thead .leads-table__sticky-num {
+    z-index: 34;
+  }
+  .leads-table thead .leads-table__sticky-name {
+    z-index: 35;
+    box-shadow: 4px 0 14px -6px rgba(0, 0, 0, 0.5);
+  }
+  .leads-table tr.leads-table__row--selected .leads-table__sticky-frozen {
+    background-color: color-mix(in srgb, var(--accent) 11%, var(--bg2));
+  }
+  .leads-table tr:not(.leads-table__row--selected):hover .leads-table__sticky-frozen {
+    background-color: color-mix(in srgb, white 4%, var(--bg2));
+  }
+  [data-theme='light'] .leads-table tr:not(.leads-table__row--selected):hover .leads-table__sticky-frozen {
+    background-color: color-mix(in srgb, black 5%, var(--bg2));
+  }
+  .leads-table tr.leads-table__row--selected:hover .leads-table__sticky-frozen {
+    background-color: color-mix(in srgb, var(--accent) 15%, var(--bg2));
+  }
+}

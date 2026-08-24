@@ -1,0 +1,107 @@
+# Reverse proxy — plantilla por instancia (https://cliente.atvos.io)
+# Puertos host: deben coincidir con BACKEND_PORT y FRONTEND_PORT del .env en la raíz del repo
+# (valores por defecto en .env.example: 8000 backend · 3000 frontend).
+#
+# PUBLIC_BACKEND_URL en .env debe ser https://cliente.atvos.io/api (mismo prefijo /api que abajo).
+# Por defecto Nginx reenvía /api/* al backend (sin el prefijo) y /media/* directo al backend.
+# Excepciones abajo: Route Handlers de Next.js bajo frontend/src/app/api/* que el browser
+# o OAuth llaman como /api/... y DEBEN llegar al puerto 3000 (antes del location /api/ genérico).
+
+server {
+    listen 80;
+    server_name cliente.atvos.io;
+    # return 301 https://$host$request_uri;
+
+    # --- Next.js Route Handlers (puerto 3000) — ANTES de location /api/ ---
+
+    # Client-side: thumbs IG/YT (reels-view, sales-dashboard, agenda-point-picker).
+    # Sin esto nginx manda a FastAPI → 404 y las imágenes rompen en producción.
+    location /api/proxy-image {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    # Client-side: Claude Vision sobre screenshots (historias-view.tsx).
+    location /api/analyze-image {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    # Client-side: classify masivo de secuencias (historias-view.tsx). Stub en Next hoy.
+    location /api/classify-all-secuencias {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    # Client-side: tags / sync_content_chats ManyChat (content-page.tsx).
+    location /api/sync/manychat {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    # Client-side: métricas Typeform del dashboard (dashboard-view.tsx).
+    location /api/typeform {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    # OAuth YouTube Analytics (auth + callback + POST). Siempre Next: Google redirige aquí.
+    # Cubre /api/youtube-analytics, /api/youtube-analytics/auth y .../callback.
+    location /api/youtube-analytics {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    # Webhooks que el backend publica como {SITE_URL}/webhooks/... (sin prefijo /api).
+    # conexiones_controller → /webhooks/manychat y /webhooks/calendly (lógica real en FastAPI).
+    location /webhooks/ {
+        proxy_pass http://127.0.0.1:8000/webhooks/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    # API FastAPI: /api/conexiones → backend /conexiones · /api/api/leads → backend /api/leads
+    # También /api/webhooks/* → backend /webhooks/* (fallback de connection-card con apiBase).
+    location /api/ {
+        proxy_pass http://127.0.0.1:8000/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    location /media/ {
+        proxy_pass http://127.0.0.1:8000/media/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}
