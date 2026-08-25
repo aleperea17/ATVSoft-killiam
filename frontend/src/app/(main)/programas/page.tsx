@@ -211,7 +211,7 @@ export default function ProgramasPage() {
             />
           </label>
           <label className="flex w-[140px] flex-col gap-1">
-            <span className="text-[11px] text-[var(--text3)]">Precio ($)</span>
+            <span className="text-[11px] text-[var(--text3)]">Precio (€)</span>
             <input
               type="text"
               inputMode="decimal"
@@ -238,7 +238,7 @@ export default function ProgramasPage() {
           <thead>
             <tr className="border-b border-[var(--border)] bg-[var(--bg3)]">
               <th className="px-4 py-3 font-semibold text-[var(--text2)]">Programa</th>
-              <th className="px-4 py-3 font-semibold text-[var(--text2)]">Precio</th>
+              <th className="px-4 py-3 font-semibold text-[var(--text2)]">Precio (€)</th>
               <th className="px-4 py-3 font-semibold text-[var(--text2)] w-[200px]">Acciones</th>
             </tr>
           </thead>

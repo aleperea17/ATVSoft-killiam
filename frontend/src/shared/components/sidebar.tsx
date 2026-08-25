@@ -59,7 +59,6 @@ const settingsGroup: NavGroup = {
   icon: '⚙',
   defaultOpen: true,
   items: [
-    { label: 'Empresa', href: '/ajustes/empresa' },
     { label: 'Listas maestras', href: '/listas' },
     { label: 'Programas', href: '/programas' },
     { label: 'Avatares', href: '/avatares' },

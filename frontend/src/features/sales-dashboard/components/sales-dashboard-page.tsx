@@ -274,7 +274,7 @@ function getMetricExplanation(id: MonthlyMetricId, d: VDData, reservaCashUsd: nu
         formula:
           reservaCashUsd > 0
             ? `Reservas × ${formatCash(reservaCashUsd)} (cada reserva = ${formatCash(reservaCashUsd)}).`
-            : 'Sin valor de reserva configurado: el cash de reservas queda en $0.',
+            : 'Sin valor de reserva configurado: el cash de reservas queda en €0.',
         data: [
           { label: 'Reservas', value: fN(d.reservas) },
           { label: 'Cash por reserva', value: formatCash(reservaCashUsd) },

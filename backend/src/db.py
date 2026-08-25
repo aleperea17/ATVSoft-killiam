@@ -34,7 +34,11 @@ def init_db() -> None:
     import src.models  # noqa: F401 — registrar entidades Pony antes del mapping
 
     db.generate_mapping(create_tables=False, check_tables=False)
-    db.create_tables(check_tables=True)
+    try:
+        db.create_tables(check_tables=True)
+    except IntegrityError:
+        # Neon/pooler: el tipo/tabla ya existe y Pony igual intenta crearlo.
+        print("[db] Esquema ya presente; se omite create_tables.")
 
     with db_session:
         for col, tipo in [

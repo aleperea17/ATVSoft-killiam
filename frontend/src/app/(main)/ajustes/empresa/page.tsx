@@ -228,7 +228,7 @@ export default function EmpresaSettingsPage() {
               </select>
             </label>
             <label className="block">
-              <span className={LABEL}>Reserva cash (USD)</span>
+              <span className={LABEL}>Reserva cash (€)</span>
               <input
                 className={INPUT}
                 type="number"

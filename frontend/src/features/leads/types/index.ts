@@ -236,7 +236,7 @@ export function buildColumns(
     { key: 'objetivo', label: 'Disponibilidad', title: '¿Tenés mínimo una hora al día para invertirle al programa?', width: 140, type: 'text', editable: true, defaultVisible: true },
     { key: 'reto_actual', label: 'Reto actual', width: 120, type: 'text', editable: true, defaultVisible: true },
     { key: 'ingresos_lead', label: 'Ingresos', width: 160, type: 'text', editable: false, defaultVisible: true },
-    { key: 'ingresos_mensuales', label: 'Ingresos lead ($)', width: 130, type: 'currency', editable: true, defaultVisible: false },
+    { key: 'ingresos_mensuales', label: 'Ingresos lead (€)', width: 130, type: 'currency', editable: true, defaultVisible: false },
     // Venta
     {
       key: 'programada_ofrecido_llamada',

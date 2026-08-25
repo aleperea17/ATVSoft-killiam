@@ -92,7 +92,7 @@ export function DefineContractModal({
         ) : null}
       </p>
       <label className="mb-1.5 block text-[11px] font-medium text-[var(--text2)]">
-        Precio del contrato ($)
+        Precio del contrato (€)
       </label>
       <input
         type="text"
@@ -108,7 +108,7 @@ export function DefineContractModal({
         <div className="mt-3 rounded-lg border border-[var(--amber)]/40 bg-[var(--amber)]/10 px-3 py-2">
           <p className="text-[12px] text-[var(--text)]">
             El contrato es menor a lo cobrado — quedaría un saldo a favor de {formatCash(credit)}.
-            La deuda queda en $0 (no se registra negativa).
+            La deuda queda en €0 (no se registra negativa).
           </p>
           <label className="mt-2 flex items-start gap-2 text-[12px] text-[var(--text2)]">
             <input

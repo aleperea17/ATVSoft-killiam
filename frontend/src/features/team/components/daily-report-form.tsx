@@ -693,8 +693,8 @@ export function DailyReportSection({ role }: Props) {
                   ])}
                 </div>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  {numField('ingreso', 'Ingreso / Cash Collected ($)', true)}
-                  {numField('facturacion', 'Facturación ($)', true)}
+                  {numField('ingreso', 'Ingreso / Cash Collected (€)', true)}
+                  {numField('facturacion', 'Facturación (€)', true)}
                   {numField(
                     'reservas',
                     reservaCashUsd > 0

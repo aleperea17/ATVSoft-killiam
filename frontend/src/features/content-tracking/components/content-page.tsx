@@ -440,7 +440,7 @@ function ContentFormModal({ open, onClose, item, onSave, title, contentType }: C
       { key: 'dolor', label: 'Dolor' },
       { key: 'angulos', label: 'Angulos (separar con coma)' },
       { key: 'cta', label: 'CTA' },
-      { key: 'cash', label: 'Cash $', type: 'number' },
+      { key: 'cash', label: 'Cash €', type: 'number' },
       { key: 'notes', label: 'Notas', span: 2 },
     )
     return base

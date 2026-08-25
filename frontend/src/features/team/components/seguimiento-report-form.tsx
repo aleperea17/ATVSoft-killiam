@@ -273,7 +273,7 @@ export function SeguimientoReportSection() {
               </select>
             </div>
             <div>
-              <label className="mb-1.5 block text-[11px] font-medium leading-snug text-[var(--text2)]">Monto ($)</label>
+              <label className="mb-1.5 block text-[11px] font-medium leading-snug text-[var(--text2)]">Monto (€)</label>
               <input
                 type="text"
                 inputMode="decimal"

@@ -17,13 +17,15 @@ export function formatIsoDateDdMmYyyy(iso: string): string {
 
 const CASH_FORMAT = new Intl.NumberFormat('es-AR', {
   style: 'currency',
-  currency: 'USD',
+  currency: 'EUR',
+  currencyDisplay: 'narrowSymbol',
   maximumFractionDigits: 0,
 })
 
 const CASH_FORMAT_DECIMALS = new Intl.NumberFormat('es-AR', {
   style: 'currency',
-  currency: 'USD',
+  currency: 'EUR',
+  currencyDisplay: 'narrowSymbol',
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 })
@@ -37,11 +39,11 @@ export function formatCashDecimal(n: number): string {
   return CASH_FORMAT_DECIMALS.format(n)
 }
 
-/** Eje compacto de gráficos ($1k, $500, …). */
+/** Eje compacto de gráficos (€1k, €500, …). */
 export function formatCashAxisShort(v: string | number): string {
   const n = Number(v)
   if (!Number.isFinite(n)) return formatCash(0)
-  if (Math.abs(n) >= 1000) return `$${Math.round(n / 1000)}k`
+  if (Math.abs(n) >= 1000) return `€${Math.round(n / 1000)}k`
   return formatCash(n)
 }
 

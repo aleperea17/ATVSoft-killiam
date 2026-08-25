@@ -201,7 +201,7 @@ export function RegisterPaymentModal({
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="mb-1.5 block text-[11px] font-medium text-[var(--text2)]">Monto ($)</label>
+          <label className="mb-1.5 block text-[11px] font-medium text-[var(--text2)]">Monto (€)</label>
           <input
             type="text"
             inputMode="decimal"
@@ -234,7 +234,7 @@ export function RegisterPaymentModal({
         {currentContract == null ? (
           <div className="col-span-2">
             <label className="mb-1.5 block text-[11px] font-medium text-[var(--text2)]">
-              Precio del contrato ($)
+              Precio del contrato (€)
             </label>
             <input
               type="text"
