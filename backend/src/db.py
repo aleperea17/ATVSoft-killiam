@@ -135,6 +135,20 @@ def init_db() -> None:
         """)
         try:
             db.execute("""
+                ALTER TABLE storyslide
+                ADD COLUMN IF NOT EXISTS published_at TIMESTAMP
+            """)
+        except Exception:
+            try:
+                db.execute("""
+                    ALTER TABLE "StorySlide"
+                    ADD COLUMN IF NOT EXISTS published_at TIMESTAMP
+                """)
+            except Exception:
+                pass
+
+        try:
+            db.execute("""
                 ALTER TABLE lead ALTER COLUMN debe DROP NOT NULL
             """)
         except Exception:

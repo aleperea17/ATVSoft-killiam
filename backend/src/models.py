@@ -75,6 +75,7 @@ class StorySlide(db.Entity):
     navigation = Optional(int)
     profile_visits = Optional(int)
     synced_at = Optional(datetime)
+    published_at = Optional(datetime)
     created_at = Required(datetime, default=lambda: datetime.utcnow())
 
 

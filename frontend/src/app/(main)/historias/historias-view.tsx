@@ -26,6 +26,7 @@ type StorySlide = {
   navigation: number | null
   profile_visits: number | null
   synced_at: string | null
+  published_at?: string | null
 }
 
 type StorySequence = {
@@ -104,6 +105,36 @@ function formatSequenceDateDisplay(iso: string): string {
 const slideReachCount = (s: Pick<StorySlide, 'reach'>) => toNumber(s.reach)
 /** Reproducciones/impresiones por slide (Graph API `views`). */
 const slideViewsCount = (s: Pick<StorySlide, 'views'>) => toNumber(s.views)
+
+/** KPIs de Instagram (insights) vs embudo (manual / leads). No mezclar un fallo de Graph con Cash/Chats. */
+function SequenceIgVsFunnelKpis({
+  totalReach,
+  avgViews,
+  cash,
+  chats,
+  agendas,
+}: {
+  totalReach: number
+  avgViews: number
+  cash: number
+  chats: number
+  agendas: number
+}) {
+  const cpc = chats > 0 ? cash / chats : 0
+  return (
+    <>
+      <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text3)]">Instagram</span>
+      <span className="font-mono-num text-[12px] text-[var(--text2)]">ALCANCE: {totalReach.toLocaleString('es-AR')}</span>
+      <span className="font-mono-num text-[12px] text-[var(--text2)]">VIS. PROM.: {avgViews.toLocaleString('es-AR')}</span>
+      <span className="hidden h-3 w-px bg-[var(--border2)] sm:inline-block" aria-hidden />
+      <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text3)]">Embudo</span>
+      <span className="font-mono-num text-[12px] text-[var(--text2)]">CASH: {formatCash(cash)}</span>
+      <span className="font-mono-num text-[12px] text-[var(--text2)]">CHATS: {chats}</span>
+      <span className="font-mono-num text-[12px] text-[var(--text2)]">AGENDAS: {agendas}</span>
+      <span className="font-mono-num text-[12px] text-[var(--text2)]">CPC: {formatCash(cpc)}</span>
+    </>
+  )
+}
 
 /** Misma story IG no se muestra dos veces (p. ej. manual + sync o doble sync). */
 function dedupeSlidesByInstagramId(slides: StorySlide[]): StorySlide[] {
@@ -791,7 +822,6 @@ export default function HistoriasPage() {
         <div className="space-y-4">
           {secuencias.map(sec => {
             const isExpanded = expanded === sec.id
-            const cpc = sec.chats > 0 ? sec.cash_generado / sec.chats : 0
             const hasSlides = sec.slides.length > 0
             const slideCount = hasSlides ? sec.slides.length : 0
 
@@ -802,12 +832,13 @@ export default function HistoriasPage() {
                 <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                     <div className="text-[14px] font-semibold">{formatSequenceDateDisplay(sec.fecha)}</div>
-                    <span className="font-mono-num text-[12px] text-[var(--text2)]">ALCANCE: {sec.totalReach.toLocaleString('es-AR')}</span>
-                    <span className="font-mono-num text-[12px] text-[var(--text2)]">VIS. PROM.: {sec.avgViews.toLocaleString('es-AR')}</span>
-                    <span className="font-mono-num text-[12px] text-[var(--text2)]">CASH: {formatCash(sec.cash_generado)}</span>
-                    <span className="font-mono-num text-[12px] text-[var(--text2)]">CHATS: {sec.chats}</span>
-                    <span className="font-mono-num text-[12px] text-[var(--text2)]">AGENDAS: {sec.agendas}</span>
-                    <span className="font-mono-num text-[12px] text-[var(--text2)]">CPC: {formatCash(cpc)}</span>
+                    <SequenceIgVsFunnelKpis
+                      totalReach={sec.totalReach}
+                      avgViews={sec.avgViews}
+                      cash={sec.cash_generado}
+                      chats={sec.chats}
+                      agendas={sec.agendas}
+                    />
                     {sec.hasSync
                       ? <span className="rounded bg-[rgba(34,197,94,0.15)] px-2 py-1 text-[10px] text-[var(--green)] font-medium">SINCRONIZADO</span>
                       : <span className="rounded bg-[rgba(161,161,170,0.15)] px-2 py-1 text-[10px] text-[var(--text3)] font-medium">Sin sincronizar</span>}
@@ -1154,14 +1185,13 @@ function StorySequenceDetail({
         </div>
 
         <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-[var(--text2)]">
-          <span className="font-mono-num">ALCANCE: {sequence.totalReach.toLocaleString('es-AR')}</span>
-          <span className="font-mono-num">VIS. PROM: {sequence.avgViews.toLocaleString('es-AR')}</span>
-          <span className="font-mono-num">CASH: {formatCash(sequence.cash_generado)}</span>
-          <span className="font-mono-num">CHATS: {sequence.chats}</span>
-          <span className="font-mono-num">AGENDAS: {sequence.agendas}</span>
-          <span className="font-mono-num">
-            CPC: {formatCash(sequence.chats > 0 ? sequence.cash_generado / sequence.chats : 0)}
-          </span>
+          <SequenceIgVsFunnelKpis
+            totalReach={sequence.totalReach}
+            avgViews={sequence.avgViews}
+            cash={sequence.cash_generado}
+            chats={sequence.chats}
+            agendas={sequence.agendas}
+          />
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">

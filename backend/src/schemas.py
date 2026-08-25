@@ -398,6 +398,7 @@ class StorySlideOut(BaseModel):
     navigation: int | None = None
     profile_visits: int | None = None
     synced_at: str | None = None
+    published_at: str | None = None
 
 
 class StorySequenceOut(BaseModel):
