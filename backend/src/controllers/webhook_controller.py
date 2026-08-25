@@ -6,6 +6,7 @@ import time
 from datetime import datetime
 from decouple import config
 from fastapi import APIRouter, HTTPException, Request
+import httpx
 from pony.orm import ObjectNotFound, db_session
 
 from src.db import db
@@ -17,6 +18,12 @@ from src.lead_display_utils import (
     set_status_agendado_if_open,
 )
 from src.models import ApiConnection, Lead, ReelContent
+from src.services.calendly_event_filter import (
+    CALENDLY_EVENT_TYPE_ALLOWLIST_KEY,
+    event_type_in_allowlist,
+    normalize_event_type_allowlist,
+    resolve_invitee_event_type,
+)
 from src.team_member_match import apply_external_role_name, members_for_user
 
 router = APIRouter(prefix="/webhooks", tags=["webhooks"], redirect_slashes=False)
@@ -431,6 +438,39 @@ def _find_lead_for_calendly(user_id: int, display_name: str) -> Lead | None:
     return name_matches[0]
 
 
+def _fetch_scheduled_event_type(event_uri: str, api_key: str) -> str | None:
+    """GET Calendly scheduled event. None = fallo; '' = 200 sin event_type."""
+    try:
+        with httpx.Client(timeout=20.0) as client:
+            response = client.get(
+                event_uri,
+                headers={"Authorization": f"Bearer {api_key}", "Accept": "application/json"},
+            )
+    except Exception as exc:
+        print(f"[calendly webhook] GET {event_uri} falló: {exc}", flush=True)
+        return None
+    if response.status_code != 200:
+        print(
+            f"[calendly webhook] GET {event_uri} HTTP {response.status_code}",
+            flush=True,
+        )
+        return None
+    try:
+        data = response.json()
+    except Exception:
+        print(f"[calendly webhook] GET {event_uri} respuesta no JSON", flush=True)
+        return None
+    resource = data.get("resource") if isinstance(data, dict) else {}
+    if not isinstance(resource, dict):
+        return ""
+    raw = resource.get("event_type")
+    if isinstance(raw, str):
+        return raw.strip()
+    if isinstance(raw, dict):
+        return str(raw.get("uri") or "").strip()
+    return ""
+
+
 @router.post("/calendly")
 async def calendly_webhook(request: Request) -> dict[str, str]:
     body_bytes = await request.body()
@@ -459,6 +499,8 @@ async def calendly_webhook(request: Request) -> dict[str, str]:
         except Exception:
             creds = {}
         signing_key = str(creds.get("signing_key") or "").strip()
+        api_key = str(creds.get("api_key") or "").strip()
+        event_type_allowlist = normalize_event_type_allowlist(creds.get(CALENDLY_EVENT_TYPE_ALLOWLIST_KEY))
 
     if signing_key:
         sig_header = request.headers.get("calendly-webhook-signature", "")
@@ -482,6 +524,36 @@ async def calendly_webhook(request: Request) -> dict[str, str]:
 
     inner_payload = _calendly_inner_payload(body)
     flat = _flatten_calendly_invitee_payload(body)
+
+    if not event_type_allowlist:
+        print(
+            "[calendly webhook] descartado: event_type_allowlist vacía (fail closed)",
+            flush=True,
+        )
+        return {"status": "ok"}
+
+    resolved_event_type, resolve_via = resolve_invitee_event_type(
+        inner_payload,
+        flat,
+        api_key=api_key,
+        fetch_scheduled_event_type=_fetch_scheduled_event_type,
+    )
+    if not resolved_event_type:
+        print(
+            f"[calendly webhook] descartado: no se pudo resolver event_type ({resolve_via})",
+            flush=True,
+        )
+        return {"status": "ok"}
+    if not event_type_in_allowlist(resolved_event_type, event_type_allowlist):
+        print(
+            f"[calendly webhook] event_type={resolved_event_type} descartado, no está en allowlist",
+            flush=True,
+        )
+        return {"status": "ok"}
+    print(
+        f"[calendly webhook] event_type={resolved_event_type} aceptado ({resolve_via})",
+        flush=True,
+    )
 
     display_name = _sanitize_webhook_display_name(
         str(inner_payload.get("name") or flat.get("name") or ""),

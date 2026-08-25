@@ -28,6 +28,12 @@ from src.lead_display_utils import (
     set_status_agendado_if_open,
 )
 from src.models import ApiConnection, Lead
+from src.services.calendly_event_filter import (
+    CALENDLY_EVENT_TYPE_ALLOWLIST_KEY,
+    event_type_in_allowlist,
+    normalize_event_type_allowlist,
+    normalize_event_type_uri,
+)
 from src.team_member_match import apply_external_role_name, members_for_user
 
 router = APIRouter(prefix="/calendly", tags=["calendly"], redirect_slashes=False)
@@ -527,6 +533,8 @@ def _run_calendly_sync(
     created = 0
     updated = 0
     events_skipped = 0
+    events_skipped_allowlist = 0
+    event_type_allowlist = normalize_event_type_allowlist(creds.get(CALENDLY_EVENT_TYPE_ALLOWLIST_KEY))
 
     with httpx.Client(timeout=60.0) as client:
         me = _calendly_get(client, headers, path="/users/me")
@@ -546,9 +554,36 @@ def _run_calendly_sync(
 
         pending: list[dict[str, Any]] = []
         invitee_request_count = 0
+        if not event_type_allowlist:
+            print(
+                "[calendly sync] event_type_allowlist vacía: no se importan eventos (fail closed)",
+                flush=True,
+            )
+            events_skipped += len(events)
+            events_skipped_allowlist += len(events)
+            events = []
+
         for event in events:
             if since is not None and not _event_is_newer_than(event, since):
                 events_skipped += 1
+                continue
+
+            event_type = normalize_event_type_uri(str(event.get("event_type") or ""))
+            if not event_type:
+                print(
+                    "[calendly sync] evento sin event_type descartado (fail closed)",
+                    flush=True,
+                )
+                events_skipped += 1
+                events_skipped_allowlist += 1
+                continue
+            if not event_type_in_allowlist(event_type, event_type_allowlist):
+                print(
+                    f"[calendly sync] event_type={event_type} descartado, no está en allowlist",
+                    flush=True,
+                )
+                events_skipped += 1
+                events_skipped_allowlist += 1
                 continue
 
             event_uuid = _uri_uuid(str(event.get("uri") or ""))
@@ -606,6 +641,7 @@ def _run_calendly_sync(
         "updated": updated,
         "month": month,
         "events_skipped": events_skipped,
+        "events_skipped_allowlist": events_skipped_allowlist,
         "only_newer": only_newer_than_last_sync,
     }
 

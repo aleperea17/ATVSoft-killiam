@@ -11,7 +11,7 @@ import { useAuthUser } from '@/shared/hooks/use-auth-user'
 type Connection = {
   id?: string
   platform: string
-  credentials: Record<string, string>
+  credentials: Record<string, unknown>
   last_sync_at: string | null
 }
 
@@ -56,14 +56,10 @@ export default function ConexionesPage() {
       }>
       const map: Record<string, Connection> = {}
       rows.forEach((row) => {
-        const creds: Record<string, string> = {}
-        Object.entries(row.credentials || {}).forEach(([k, v]) => {
-          creds[k] = v == null ? '' : String(v)
-        })
         map[row.platform] = {
           id: row.id,
           platform: row.platform,
-          credentials: creds,
+          credentials: row.credentials || {},
           last_sync_at: row.last_sync_at,
         }
       })
@@ -78,7 +74,7 @@ export default function ConexionesPage() {
   }, [fetchConnections])
 
   const saveConnection = useCallback(
-    async (platform: string, credentials: Record<string, string>) => {
+    async (platform: string, credentials: Record<string, unknown>) => {
       if (!userId) {
         toast('Iniciá sesión para guardar conexiones.')
         return
@@ -103,7 +99,7 @@ export default function ConexionesPage() {
   )
 
   const savers = useMemo(() => {
-    const map: Record<string, (creds: Record<string, string>) => Promise<void>> = {}
+    const map: Record<string, (creds: Record<string, unknown>) => Promise<void>> = {}
     for (const p of PLATFORMS) {
       map[p.key] = (creds) => saveConnection(p.key, creds)
     }

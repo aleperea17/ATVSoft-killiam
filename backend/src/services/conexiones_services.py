@@ -7,13 +7,17 @@ from src.db_query_utils import rows_for_user
 from src.services.anthropic_service import invalidate_claude_status_cache
 from src.models import ApiConnection
 from src.schemas import ApiConnectionResponse, ApiConnectionUpsertRequest
+from src.services.calendly_event_filter import (
+    merge_calendly_credentials,
+    sanitize_calendly_credentials,
+)
 
-_CALENDLY_CREDENTIAL_KEYS = frozenset({"api_key", "signing_key"})
+_CALENDLY_CREDENTIAL_KEYS = frozenset({"api_key", "signing_key", "event_type_allowlist"})
 
 
 def _sanitize_calendly_credentials(creds: dict) -> dict:
-    """Solo persiste PAT y signing key; ignora q_* legacy ya guardados en BD."""
-    return {k: str(v) if v is not None else "" for k, v in creds.items() if k in _CALENDLY_CREDENTIAL_KEYS}
+    """Persiste PAT, signing key y event_type_allowlist; ignora q_* legacy."""
+    return sanitize_calendly_credentials(creds)
 
 
 class ConexionesServices:
@@ -53,6 +57,10 @@ class ConexionesServices:
                 incoming_credentials = _sanitize_calendly_credentials(incoming_credentials)
             if existing:
                 previous_credentials = existing.credentials if isinstance(existing.credentials, dict) else {}
+                if platform.lower() == "calendly":
+                    incoming_credentials = merge_calendly_credentials(
+                        previous_credentials, incoming_credentials
+                    )
                 if platform.lower() == "instagram":
                     previous_token = str(previous_credentials.get("access_token") or "").strip()
                     incoming_token = str(incoming_credentials.get("access_token") or "").strip()

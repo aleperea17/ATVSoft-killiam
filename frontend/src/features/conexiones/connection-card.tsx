@@ -11,17 +11,25 @@ import { ClaudeSaldoHint } from './claude-saldo-hint'
 
 export type ConnectionRow = {
   platform: string
-  credentials: Record<string, string>
+  credentials: Record<string, unknown>
   last_sync_at: string | null
 }
 
 const WEBHOOK_PLATFORMS = ['manychat', 'calendly'] as const
 const CALENDLY_CREDENTIAL_KEYS = ['api_key', 'signing_key'] as const
 
-function calendlyCredentialsOnly(creds: Record<string, string>): Record<string, string> {
-  const out: Record<string, string> = {}
+function calendlyCredentialsOnly(
+  creds: Record<string, unknown>,
+  previous?: Record<string, unknown>,
+): Record<string, unknown> {
+  const asText = (v: unknown) => (v == null ? '' : String(v))
+  const out: Record<string, unknown> = {}
   for (const key of CALENDLY_CREDENTIAL_KEYS) {
-    out[key] = creds[key] ?? ''
+    out[key] = asText(creds[key] ?? previous?.[key] ?? '')
+  }
+  const prevAllow = previous?.event_type_allowlist
+  if (Array.isArray(prevAllow) && prevAllow.length > 0) {
+    out.event_type_allowlist = prevAllow
   }
   return out
 }
@@ -50,7 +58,7 @@ type Props = {
   connection?: ConnectionRow
   cardLayout?: 'default' | 'setup'
   apiBase: string
-  onSave: (credentials: Record<string, string>) => void | Promise<void>
+  onSave: (credentials: Record<string, unknown>) => void | Promise<void>
   onSyncComplete?: () => void | Promise<void>
 }
 
@@ -97,12 +105,31 @@ function ConnectionCardInner({
     label: ghlSyncMonthLabel,
   } = useMonth(timezone)
 
+  const credValue = (v: unknown) => {
+    if (Array.isArray(v)) return v.length > 0
+    if (typeof v === 'string') return v.trim().length > 0
+    return Boolean(v)
+  }
   const isConnected =
-    !platform.infoOnly && connection && Object.values(connection.credentials).some((v) => v?.trim())
+    !platform.infoOnly && connection && Object.values(connection.credentials).some(credValue)
 
   useEffect(() => {
     if (!connection?.credentials) return
-    setForm(platform.key === 'calendly' ? calendlyCredentialsOnly(connection.credentials) : connection.credentials)
+    if (platform.key === 'calendly') {
+      const only = calendlyCredentialsOnly(connection.credentials, connection.credentials)
+      setForm({
+        api_key: String(only.api_key || ''),
+        signing_key: String(only.signing_key || ''),
+      })
+      return
+    }
+    const next: Record<string, string> = {}
+    for (const [k, v] of Object.entries(connection.credentials)) {
+      if (typeof v === 'string') next[k] = v
+      else if (v == null) next[k] = ''
+      else next[k] = String(v)
+    }
+    setForm(next)
   }, [connection, platform.key])
 
   useEffect(() => {
@@ -156,12 +183,14 @@ function ConnectionCardInner({
     async (creds: Record<string, string>) => {
       setStatus('loading')
       setErrorMsg('')
-      let payload =
-        platform.key === 'calendly' ? calendlyCredentialsOnly(creds) : { ...creds }
+      let payload: Record<string, unknown> =
+        platform.key === 'calendly'
+          ? calendlyCredentialsOnly(creds, connection?.credentials)
+          : { ...creds }
       if (platform.key === 'instagram' && connection?.credentials) {
         const prev = connection.credentials
-        if (!String(payload.access_token || '').trim() && prev.access_token?.trim()) {
-          payload = { ...payload, access_token: prev.access_token }
+        if (!String(payload.access_token || '').trim() && String(prev.access_token || '').trim()) {
+          payload = { ...payload, access_token: String(prev.access_token) }
         }
       }
       try {
@@ -216,7 +245,7 @@ function ConnectionCardInner({
 
   const syncCalendly = useCallback(async () => {
     if (platform.key !== 'calendly') return
-    const apiKey = (form.api_key || connection?.credentials?.api_key || '').trim()
+    const apiKey = String(form.api_key || connection?.credentials?.api_key || '').trim()
     if (!apiKey) {
       setSyncStatus('Guardá el Personal Access Token antes de sincronizar.')
       return
@@ -272,7 +301,7 @@ function ConnectionCardInner({
 
   const syncGhl = useCallback(async () => {
     if (platform.key !== 'ghl') return
-    const token = (form.access_token || connection?.credentials?.access_token || '').trim()
+    const token = String(form.access_token || connection?.credentials?.access_token || '').trim()
     if (!token) {
       setSyncStatus('Guardá el Private Integration Token antes de sincronizar.')
       return
