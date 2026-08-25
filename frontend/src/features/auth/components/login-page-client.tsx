@@ -97,14 +97,6 @@ export function LoginPageClient() {
       <button type="submit" disabled={pending} className={CTA_CLASS}>
         {pending ? 'Cargando…' : 'Iniciar sesion'}
       </button>
-
-      {setup && !setup.needs_setup && setup.extra_signup_allowed ? (
-        <p className="text-center text-[12px] text-[var(--text3)]">
-          <Link href="/signup" className="text-[var(--accent)] hover:underline">
-            Crear cuenta (requiere clave de administrador)
-          </Link>
-        </p>
-      ) : null}
     </form>
   )
 }
