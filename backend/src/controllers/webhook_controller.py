@@ -9,8 +9,10 @@ from fastapi import APIRouter, HTTPException, Request
 import httpx
 from pony.orm import ObjectNotFound, db_session
 
+from src.datetime_utils import naive_utc
 from src.db import db
 from src.db_query_utils import rows_for_user
+from src.db_session_retry import once_on_unrepeatable_read
 from src.lead_display_utils import (
     compute_dias_para_agendar,
     fill_str_if_empty,
@@ -309,10 +311,8 @@ def _calendly_webhook_received_at(flat: dict, inner: dict) -> datetime:
         or inner.get("updated_at")
     )
     if raw:
-        dt = _parse_calendly_start_time(str(raw))
+        dt = naive_utc(_parse_calendly_start_time(str(raw)))
         if dt is not None:
-            if dt.tzinfo is not None:
-                dt = dt.replace(tzinfo=None)
             return dt
     return datetime.utcnow()
 
@@ -565,7 +565,7 @@ async def calendly_webhook(request: Request) -> dict[str, str]:
         start_raw = flat["scheduled_event"].get("start_time")
     if isinstance(start_raw, dict):
         start_raw = start_raw.get("start_time")
-    start_dt = _parse_calendly_start_time(str(start_raw) if start_raw else None)
+    start_dt = naive_utc(_parse_calendly_start_time(str(start_raw) if start_raw else None))
 
     if not display_name and email:
         display_name = email.split("@")[0]
@@ -584,6 +584,35 @@ async def calendly_webhook(request: Request) -> dict[str, str]:
             if closer_name:
                 break
 
+    once_on_unrepeatable_read(
+        lambda: _persist_calendly_webhook_lead(
+            user_id=user_id,
+            display_name=display_name,
+            email=email,
+            start_dt=start_dt,
+            start_raw_label=start_raw_label,
+            form_completed_at=form_completed_at,
+            form_fields=form_fields,
+            closer_name=closer_name,
+        ),
+        log_label="calendly webhook",
+    )
+
+    return {"status": "ok"}
+
+
+def _persist_calendly_webhook_lead(
+    *,
+    user_id: int,
+    display_name: str,
+    email: str,
+    start_dt: datetime | None,
+    start_raw_label: str,
+    form_completed_at: datetime,
+    form_fields: dict[str, str],
+    closer_name: str,
+) -> None:
+    """Alta/update de Lead. Un db_session; el caller reintenta UnrepeatableReadError una vez."""
     with db_session:
         row = _find_lead_for_calendly(user_id, display_name)
         if row is not None:
@@ -603,26 +632,24 @@ async def calendly_webhook(request: Request) -> dict[str, str]:
                 _apply_calendly_form_fields(row, form_fields)
                 row.dias_para_agendar = compute_dias_para_agendar(row.primer_contacto, row.agendo)
             apply_external_role_name(row, members_for_user(user_id), role="closer", name=closer_name)
-        else:
-            notas_parts = []
-            if email:
-                notas_parts.append(f"Calendly email: {email}")
-            if start_raw_label:
-                notas_parts.append(f"Cita: {start_raw_label}")
-            row = Lead(
-                user_id=user_id,
-                nombre=display_name or (email.split("@")[0] if email else "Invitado Calendly"),
-                email=email or "",
-                agendo=form_completed_at,
-                call=start_dt,
-                agendo_en="Chat",
-                status="Agendado",
-                notas="\n".join(notas_parts),
-            )
-            _apply_calendly_form_fields(row, form_fields)
-            apply_external_role_name(row, members_for_user(user_id), role="closer", name=closer_name)
-
-    return {"status": "ok"}
+            return
+        notas_parts = []
+        if email:
+            notas_parts.append(f"Calendly email: {email}")
+        if start_raw_label:
+            notas_parts.append(f"Cita: {start_raw_label}")
+        row = Lead(
+            user_id=user_id,
+            nombre=display_name or (email.split("@")[0] if email else "Invitado Calendly"),
+            email=email or "",
+            agendo=form_completed_at,
+            call=start_dt,
+            agendo_en="Chat",
+            status="Agendado",
+            notas="\n".join(notas_parts),
+        )
+        _apply_calendly_form_fields(row, form_fields)
+        apply_external_role_name(row, members_for_user(user_id), role="closer", name=closer_name)
 
 
 @router.get("/calendly")

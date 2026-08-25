@@ -20,7 +20,9 @@ from src.controllers.webhook_controller import (
     _merge_calendly_email_notas,
     _parse_calendly_start_time,
 )
+from src.datetime_utils import naive_utc
 from src.db_query_utils import rows_for_user
+from src.db_session_retry import once_on_unrepeatable_read
 from src.lead_display_utils import (
     compute_dias_para_agendar,
     fill_str_if_empty,
@@ -241,18 +243,10 @@ def _fetch_scheduled_events(
     return events
 
 
-def _naive_utc(dt: datetime | None) -> datetime | None:
-    if dt is None:
-        return None
-    if dt.tzinfo is not None:
-        return dt.replace(tzinfo=None)
-    return dt
-
-
 def _event_activity_at(event: dict[str, Any]) -> datetime | None:
     """Última actividad del evento (updated_at o created_at)."""
     for key in ("updated_at", "created_at"):
-        dt = _naive_utc(_parse_calendly_start_time(str(event.get(key) or "")))
+        dt = naive_utc(_parse_calendly_start_time(str(event.get(key) or "")))
         if dt is not None:
             return dt
     return None
@@ -286,7 +280,7 @@ def _load_calendly_connection(uid: int) -> tuple[dict[str, Any], datetime | None
             )
         last_sync = conn.last_sync_at
         if last_sync is not None and last_sync.tzinfo is not None:
-            last_sync = last_sync.replace(tzinfo=None)
+            last_sync = naive_utc(last_sync)
         return dict(creds), last_sync
 
 
@@ -394,8 +388,35 @@ def _calendly_host_name(event: dict[str, Any] | None) -> str:
     return ""
 
 
-@db_session
 def _apply_invitee_to_lead(
+    user_id: int,
+    *,
+    name: str,
+    email: str,
+    call_at: datetime | None,
+    agendo_at: datetime | None,
+    form_fields: dict[str, str] | None = None,
+    closer_name: str | None = None,
+) -> str:
+    """Returns 'created' or 'updated'. Reintenta UnrepeatableReadError una vez."""
+    call_at = naive_utc(call_at)
+    agendo_at = naive_utc(agendo_at)
+    return once_on_unrepeatable_read(
+        lambda: _apply_invitee_to_lead_once(
+            user_id,
+            name=name,
+            email=email,
+            call_at=call_at,
+            agendo_at=agendo_at,
+            form_fields=form_fields,
+            closer_name=closer_name,
+        ),
+        log_label="calendly sync",
+    )
+
+
+@db_session
+def _apply_invitee_to_lead_once(
     user_id: int,
     *,
     name: str,
@@ -589,7 +610,7 @@ def _run_calendly_sync(
             event_uuid = _uri_uuid(str(event.get("uri") or ""))
             if not event_uuid:
                 continue
-            start_dt = _parse_calendly_start_time(str(event.get("start_time") or ""))
+            start_dt = naive_utc(_parse_calendly_start_time(str(event.get("start_time") or "")))
             host_name = _calendly_host_name(event)
             if invitee_request_count > 0:
                 time.sleep(_INVITEE_REQUEST_DELAY_S)
@@ -610,7 +631,9 @@ def _run_calendly_sync(
                         "name": str(invitee.get("name") or "").strip(),
                         "email": email,
                         "call_at": start_dt,
-                        "agendo_at": _parse_calendly_start_time(str(invitee.get("created_at") or "")),
+                        "agendo_at": naive_utc(
+                            _parse_calendly_start_time(str(invitee.get("created_at") or ""))
+                        ),
                         "form_fields": _extract_calendly_form_fields(invitee, invitee),
                         "closer_name": host_name,
                     }
