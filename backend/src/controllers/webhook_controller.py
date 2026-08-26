@@ -255,6 +255,14 @@ async def manychat_webhook(request: Request) -> dict[str, str]:
             if manychat_contact_id and not (existing.manychat_contact_id or "").strip():
                 existing.manychat_contact_id = manychat_contact_id
             existing.fecha_bot = now
+            if existing.agendo is None:
+                existing.agendo = now
+            if not (existing.status or "").strip():
+                existing.status = "Pendiente"
+            if not (existing.estado or "").strip():
+                existing.estado = "Pendiente"
+            if not (existing.agendo_en or "").strip():
+                existing.agendo_en = "Chat"
             if respondio_requested:
                 existing.respondio_auto = True
         else:
@@ -266,6 +274,10 @@ async def manychat_webhook(request: Request) -> dict[str, str]:
                 content_url=content_url,
                 manychat_contact_id=manychat_contact_id,
                 fecha_bot=now,
+                agendo=now,
+                agendo_en="Chat",
+                status="Pendiente",
+                estado="Pendiente",
                 respondio_auto=False,
             )
 
