@@ -18,16 +18,3 @@ export default function MainLayout({
     </AppProviders>
   )
 }
-
-  children,
-}: {
-  children: React.ReactNode
-}) {
-  return (
-    <AppProviders>
-      <AuthGuard>
-        <MainLayoutShell>{children}</MainLayoutShell>
-      </AuthGuard>
-    </AppProviders>
-  )
-}
