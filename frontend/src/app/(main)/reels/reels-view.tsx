@@ -20,6 +20,7 @@ type Reel = {
   chats: number
   published_at: string | null
   url: string | null
+  content_url?: string | null
   notes: string | null
   external_id: string | null
   keyword: string | null
@@ -29,6 +30,13 @@ type Reel = {
   cash_total: number
   cpc: number
   agendas?: number | null
+}
+
+function reelInstagramUrl(reel: Pick<Reel, 'url' | 'content_url'>): string | null {
+  const raw = String(reel.url || reel.content_url || '').trim()
+  if (!raw) return null
+  if (/^https?:\/\//i.test(raw)) return raw
+  return `https://${raw.replace(/^\/+/, '')}`
 }
 
 type ReelsListResponse = {
@@ -1150,6 +1158,7 @@ function ReelCard({
     reel.agendas != null && !Number.isNaN(Number(reel.agendas)) ? formatInt(Number(reel.agendas)) : '—'
   const cpc = reel.chats > 0 ? reel.cash / reel.chats : 0
   const title = reel.title || reel.notes?.substring(0, 60) || 'Sin titulo'
+  const instagramUrl = reelInstagramUrl(reel)
   const [editingCash, setEditingCash] = useState(false)
   const [editingChats, setEditingChats] = useState(false)
   const [cashDraft, setCashDraft] = useState(String(Number(reel.cash || 0)))
@@ -1169,7 +1178,12 @@ function ReelCard({
           ? 'col-span-full flex flex-col lg:col-span-4 lg:grid lg:grid-cols-[minmax(240px,300px)_1fr]'
           : 'cursor-pointer'
       }`}
-      onClick={!isExpanded ? onToggle : undefined}
+      onClick={(e) => {
+        if (isExpanded) return
+        const t = e.target
+        if (t instanceof Element && t.closest('button, a')) return
+        onToggle()
+      }}
     >
       <div className="relative">
         {thumb ? (
@@ -1190,16 +1204,18 @@ function ReelCard({
             <div className="font-mono-num text-lg font-bold text-[var(--green)]">{formatCash(reel.cash)}</div>
           </div>
         )}
-        {reel.url && !isExpanded && (
-          <a
-            href={reel.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            className="absolute top-2 right-2 rounded-md bg-black/50 p-1.5 text-white/70 hover:text-white transition-colors backdrop-blur-sm"
+        {instagramUrl && !isExpanded && (
+          <button
+            type="button"
+            title="Ver en Instagram"
+            onClick={(e) => {
+              e.stopPropagation()
+              window.open(instagramUrl, '_blank', 'noopener,noreferrer')
+            }}
+            className="absolute top-2 right-2 z-10 rounded-md bg-black/50 p-1.5 text-white/70 hover:text-white transition-colors backdrop-blur-sm"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
-          </a>
+          </button>
         )}
       </div>
 
@@ -1232,8 +1248,14 @@ function ReelCard({
               <div className="text-[11px] text-[var(--text3)] mt-0.5">{formatDateDMY(reel.published_at, timezone)}</div>
             </div>
             <div className="flex items-center gap-2">
-              {reel.url && (
-                <a href={reel.url} target="_blank" rel="noopener noreferrer" className="rounded-md bg-[var(--bg4)] px-3 py-1.5 text-[10px] text-[var(--text2)] hover:text-[var(--text)] transition-colors">
+              {instagramUrl && (
+                <a
+                  href={instagramUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="rounded-md bg-[var(--bg4)] px-3 py-1.5 text-[10px] text-[var(--text2)] hover:text-[var(--text)] transition-colors"
+                >
                   Ver en Instagram →
                 </a>
               )}
