@@ -1,3 +1,4 @@
+import asyncio
 import hashlib
 import hmac
 import json
@@ -544,7 +545,8 @@ async def calendly_webhook(request: Request) -> dict[str, str]:
         )
         return {"status": "ok"}
 
-    resolved_event_type, resolve_via = resolve_invitee_event_type(
+    resolved_event_type, resolve_via = await asyncio.to_thread(
+        resolve_invitee_event_type,
         inner_payload,
         flat,
         api_key=api_key,

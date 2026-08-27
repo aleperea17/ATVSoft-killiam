@@ -2,6 +2,7 @@ from src.setup_env import bootstrap_environment
 
 bootstrap_environment()
 
+import asyncio
 import os
 from contextlib import asynccontextmanager
 
@@ -112,7 +113,7 @@ async def auto_sync_calendly() -> None:
         )
         for user_id in user_ids:
             try:
-                result = run_calendly_auto_sync_for_user(int(user_id))
+                result = await asyncio.to_thread(run_calendly_auto_sync_for_user, int(user_id))
                 if result.get("skipped"):
                     print(
                         f"[scheduler] Calendly skip user={user_id} reason={result.get('reason')}"

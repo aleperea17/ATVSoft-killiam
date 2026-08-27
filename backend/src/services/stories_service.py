@@ -1078,7 +1078,9 @@ class StoriesService:
                     "?fields=id,timestamp,media_type,media_url,thumbnail_url"
                 )
                 headers = {"Authorization": f"Bearer {access_token}", "Accept": "application/json"}
-                stories_payload = _http_json_instagram(stories_url, headers=headers)
+                stories_payload = await asyncio.to_thread(
+                    _http_json_instagram, stories_url, headers
+                )
                 stories = stories_payload.get("data")
                 story_rows = stories if isinstance(stories, list) else []
                 tz = get_tenant_tz()
@@ -1128,7 +1130,9 @@ class StoriesService:
                             image_url = await download_story_image(source_url, user_id, story_id) if source_url else None
 
                             published_at = _graph_timestamp_to_tenant_dt(raw.get("timestamp"))
-                            metrics, insight_issues = _fetch_story_insights(story_id, access_token, headers)
+                            metrics, insight_issues = await asyncio.to_thread(
+                                _fetch_story_insights, story_id, access_token, headers
+                            )
                             insight_issues_acc.update(insight_issues)
                             print(f"[sync] insights para story {story_id}:", metrics, flush=True)
 
@@ -1172,7 +1176,12 @@ class StoriesService:
                     for r in story_rows
                     if isinstance(r, dict) and str(r.get("id") or "").strip()
                 }
-                metrics_refreshed = self._refresh_stale_slide_metrics(user_id, access_token, active_story_ids)
+                metrics_refreshed = await asyncio.to_thread(
+                    self._refresh_stale_slide_metrics,
+                    user_id,
+                    access_token,
+                    active_story_ids,
+                )
 
                 self._touch_last_sync(user_id)
                 result: dict[str, Any] = {
@@ -1184,7 +1193,9 @@ class StoriesService:
                     "metrics_refreshed": metrics_refreshed,
                 }
                 if insight_issues_acc:
-                    perms = _fetch_token_permissions(access_token, headers)
+                    perms = await asyncio.to_thread(
+                        _fetch_token_permissions, access_token, headers
+                    )
                     warning = _build_sync_insights_warning(insight_issues_acc, perms)
                     if warning:
                         result["warning"] = warning
