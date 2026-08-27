@@ -156,6 +156,11 @@ def _lead_sort_ts(row: LeadEntity) -> float:
     return float(dt.replace(tzinfo=timezone.utc).timestamp())
 
 
+def _has_manychat_contact_id(row: LeadEntity) -> bool:
+    """Lead de Instagram/ManyChat: no va a la grilla general de Leads."""
+    return bool((row.manychat_contact_id or "").strip())
+
+
 def require_user_id(
     x_user_id: Annotated[str | None, Header(alias="X-User-Id")] = None,
 ) -> str:
@@ -317,7 +322,10 @@ def list_leads(
     ),
     include_all: bool = Query(
         default=False,
-        description="Si true, incluye leads sin agendo (p. ej. conteos por origen en dashboard marketing).",
+        description=(
+            "Si true, incluye leads sin agendo (p. ej. conteos por origen en dashboard marketing). "
+            "El default también excluye filas con manychat_contact_id no vacío (vista Lead por reel)."
+        ),
     ),
 ) -> LeadsListResponse:
     try:
@@ -333,11 +341,14 @@ def list_leads(
 
     with db_session:
         norm_prices = build_program_norm_price_map(uid)
+        rows = rows_for_user(LeadEntity, uid)
         if not include_all:
-            rows = rows_for_user(LeadEntity, uid)
-            rows = [r for r in rows if r.agendo is not None]
-        else:
-            rows = rows_for_user(LeadEntity, uid)
+            # Grilla Leads (Trackeo de ventas): con agendo, y sin contactos de Instagram/ManyChat.
+            rows = [
+                r
+                for r in rows
+                if r.agendo is not None and not _has_manychat_contact_id(r)
+            ]
         if month_key is not None:
             year_m, month_m = month_key
             rows = [
