@@ -1185,22 +1185,23 @@ function ReelCard({
         onToggle()
       }}
     >
-      <div className="relative">
+      <div className={`relative overflow-hidden ${isExpanded ? '' : 'h-44'}`}>
         {thumb ? (
           <img
             src={thumb}
             alt=""
-            className={`w-full object-cover ${isExpanded ? 'h-full min-h-[300px]' : 'h-44'}`}
+            draggable={false}
+            className={`pointer-events-none w-full object-cover ${isExpanded ? 'h-full min-h-[300px]' : 'h-44'}`}
             onError={() => setImgErr(true)}
           />
         ) : (
-          <div className={`w-full bg-gradient-to-br from-[var(--bg3)] to-[var(--bg4)] flex flex-col items-center justify-center ${isExpanded ? 'h-full min-h-[300px]' : 'h-44'}`}>
+          <div className={`pointer-events-none w-full bg-gradient-to-br from-[var(--bg3)] to-[var(--bg4)] flex flex-col items-center justify-center ${isExpanded ? 'h-full min-h-[300px]' : 'h-44'}`}>
             <div className="text-3xl mb-1">🎥</div>
             <div className="text-[10px] text-[var(--text3)] px-3 text-center truncate max-w-full">{title}</div>
           </div>
         )}
         {!isExpanded && (
-          <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-3">
+          <div className="pointer-events-none absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-3">
             <div className="font-mono-num text-lg font-bold text-[var(--green)]">{formatCash(reel.cash)}</div>
           </div>
         )}
@@ -1209,12 +1210,13 @@ function ReelCard({
             type="button"
             title="Ver en Instagram"
             onClick={(e) => {
+              e.preventDefault()
               e.stopPropagation()
               window.open(instagramUrl, '_blank', 'noopener,noreferrer')
             }}
-            className="absolute top-2 right-2 z-10 rounded-md bg-black/50 p-1.5 text-white/70 hover:text-white transition-colors backdrop-blur-sm"
+            className="pointer-events-auto absolute top-2 right-2 z-10 flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-md bg-black/50 p-0 text-white/70 hover:text-white transition-colors backdrop-blur-sm"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="h-3 w-3 shrink-0" aria-hidden><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" /></svg>
           </button>
         )}
       </div>
