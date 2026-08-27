@@ -1,9 +1,9 @@
-'use client'
-
-import dynamic from 'next/dynamic'
+import nextDynamic from 'next/dynamic'
 import { PageLoading } from '@/shared/components/page-loading'
 
-const ReelsPage = dynamic(() => import('./reels-view'), {
+export const dynamic = 'force-dynamic'
+
+const ReelsPage = nextDynamic(() => import('./reels-view'), {
   loading: () => <PageLoading />,
 })
 
